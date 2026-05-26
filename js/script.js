@@ -189,13 +189,42 @@ if(formulario){
 
 }
 
+// ========================================
+// TYPEWRITER SOLO EN INICIO
+// ========================================
+
+const tituloHero = document.querySelector('.hero-content h1');
+
+if(tituloHero){
+
+    const texto = tituloHero.textContent;
+
+    tituloHero.textContent = '';
+
+    let i = 0;
+
+    function escribirTexto(){
+
+        if(i < texto.length){
+
+            tituloHero.textContent += texto.charAt(i);
+
+            i++;
+
+            setTimeout(escribirTexto, 80);
+        }
+
+    }
+
+    escribirTexto();
+
+}
 
 // ========================================
-// TYPEWRITER PREMIUM
+// TYPEWRITER OTROS BANNERS
 // ========================================
-
 const titulosBanner = document.querySelectorAll(
-    '.hero-content h1, .contenido-destinos h1, .contenido-blog h1, .contenido-galeria h1, .contenido-contacto h1'
+    '.contenido-destinos h1, .contenido-blog h1, .contenido-galeria h1, .contenido-contacto h1'
 );
 
 titulosBanner.forEach((titulo) => {

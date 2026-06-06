@@ -18,15 +18,21 @@ body {
 }
 
 .navbar-brand {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: start;
+    padding: 10px;
     font-size: 1.8rem;
     font-weight: 700;
     color: #ffffff;
 }
 
-.logo{
-
-    width: 40px;
-    height: auto;
+.images-logo{
+    display: block;
+    object-fit: contain;
+    width: 45px;
+    height: 45px;
 }
 
 
@@ -87,16 +93,10 @@ body {
     );
 }
 
-/* TIKTOK */
-
-.redes-flotantes a:nth-child(2) {
-    background: #000000;
-}
-
 /* FACEBOOK */
 
 .redes-flotantes a:nth-child(3) {
-    background: #1877F2;
+    background: #08108b;
 }
 
 /* ========================= */
@@ -473,7 +473,10 @@ body {
 .footer p {
     color: #dcdcdc;
     line-height: 1.8;
+    
 }
+
+
 
 /* LINKS */
 
@@ -484,6 +487,7 @@ body {
 
 .footer-links ul li {
     margin-bottom: 10px;
+    text-decoration: none;
 }
 
 .footer-links ul li a {
@@ -494,6 +498,7 @@ body {
 
 .footer-links ul li a:hover {
     color: #FF914D;
+    
 }
 
 /* COPYRIGHT */
@@ -503,6 +508,7 @@ body {
     margin-top: 50px;
     padding: 20px 0;
     border-top: 1px solid rgba(255,255,255,0.2);
+
 }
 
 /* ========================= */

@@ -139,6 +139,33 @@ app.post('/api/upload', (req, res) => {
   });
 });
 
+app.delete('/api/image', (req, res) => {
+  if (!isAuthorized(req)) {
+    return res.status(401).json({ error: 'No autorizado.' });
+  }
+
+  const imagePath = req.body?.path;
+  if (!imagePath) {
+    return res.status(400).json({ error: 'Ruta de imagen requerida.' });
+  }
+
+  const normalized = imagePath.replace(/\\/g, '/');
+  if (!normalized.startsWith('uploads/')) {
+    return res.json({ ok: true, message: 'Referencia eliminada del contenido.' });
+  }
+
+  try {
+    const fullPath = path.join(__dirname, normalized);
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+    res.json({ ok: true, message: 'Imagen eliminada.' });
+  } catch (error) {
+    console.error('Error al eliminar archivo:', error);
+    res.status(500).json({ error: 'No se pudo eliminar el archivo.' });
+  }
+});
+
 app.post('/api/login', (req, res) => {
   const { password } = req.body;
 

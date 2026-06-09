@@ -65,6 +65,12 @@ function createDestinoCard(item, index, prefix) {
 function createGaleriaCard(item, index) {
     return `
         <div class="admin-item-card" data-index="${index}">
+            <div class="admin-item-header">
+                <span class="admin-item-label">Foto ${index + 1}</span>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-delete-galeria" title="Eliminar foto">
+                    <i class="fa-solid fa-trash"></i> Eliminar
+                </button>
+            </div>
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Título</label>
@@ -86,6 +92,89 @@ function createGaleriaCard(item, index) {
             </div>
         </div>
     `;
+}
+
+function collectGaleriaItems(form) {
+    const cards = document.querySelectorAll('#galeria-items-container .admin-item-card');
+    return Array.from(cards).map((card) => ({
+        titulo: card.querySelector('[name^="gal_titulo_"]')?.value || '',
+        alt: card.querySelector('[name^="gal_alt_"]')?.value || '',
+        imagen: card.querySelector('[name^="gal_img_"]')?.value || ''
+    }));
+}
+
+function reindexGaleriaCards() {
+    const container = document.getElementById('galeria-items-container');
+    container.querySelectorAll('.admin-item-card').forEach((card, i) => {
+        card.dataset.index = i;
+        const label = card.querySelector('.admin-item-label');
+        if (label) label.textContent = `Foto ${i + 1}`;
+
+        const titulo = card.querySelector('[name^="gal_titulo_"]');
+        const alt = card.querySelector('[name^="gal_alt_"]');
+        const img = card.querySelector('[name^="gal_img_"]');
+        const fileInput = card.querySelector('.item-upload');
+
+        if (titulo) titulo.name = `gal_titulo_${i}`;
+        if (alt) alt.name = `gal_alt_${i}`;
+        if (img) img.name = `gal_img_${i}`;
+        if (fileInput) fileInput.dataset.index = i;
+    });
+    bindUploadInputs();
+}
+
+async function deleteImageFile(imagePath) {
+    if (!imagePath?.startsWith('uploads/')) return;
+
+    try {
+        await fetch('/api/image', {
+            method: 'DELETE',
+            headers: authHeaders(),
+            body: JSON.stringify({ path: imagePath })
+        });
+    } catch {
+        // No bloquear si el archivo ya no existe en disco
+    }
+}
+
+async function saveGaleriaFromForm(form, options = {}) {
+    contentData.galeria = {
+        titulo: form.titulo.value,
+        subtitulo: form.subtitulo.value,
+        banner: form.banner.value,
+        items: collectGaleriaItems(form)
+    };
+    await saveContent(contentData, { silent: true });
+    if (!options.skipReload) populateForms();
+}
+
+function bindGaleriaActions() {
+    const container = document.getElementById('galeria-items-container');
+    if (container.dataset.bound) return;
+    container.dataset.bound = 'true';
+
+    container.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.btn-delete-galeria');
+        if (!btn) return;
+
+        const card = btn.closest('.admin-item-card');
+        const form = document.getElementById('form-galeria');
+        if (!card || !form) return;
+
+        if (!confirm('¿Eliminar esta foto de la galería?')) return;
+
+        const imagenPath = card.querySelector('[name^="gal_img_"]')?.value || '';
+        card.remove();
+        reindexGaleriaCards();
+
+        try {
+            await deleteImageFile(imagenPath);
+            await saveGaleriaFromForm(form);
+            showAlert('Foto eliminada correctamente.');
+        } catch (error) {
+            showAlert(error.message, 'danger');
+        }
+    });
 }
 
 function createBlogCard(item, index) {
@@ -168,6 +257,7 @@ function populateForms() {
 
     bindUploadInputs();
     document.querySelectorAll('.path-field').forEach((el) => { el.readOnly = true; });
+    bindGaleriaActions();
 }
 
 function bindUploadInputs() {
@@ -277,7 +367,7 @@ async function uploadPendingFiles(form) {
     }
 }
 
-async function saveContent(updated) {
+async function saveContent(updated, options = {}) {
     const res = await fetch('/api/content', {
         method: 'PUT',
         headers: authHeaders(),
@@ -287,7 +377,7 @@ async function saveContent(updated) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     contentData = updated;
-    showAlert('Cambios guardados correctamente.');
+    if (!options.silent) showAlert('Cambios guardados correctamente.');
 }
 
 loginForm.addEventListener('submit', async (e) => {
@@ -409,13 +499,7 @@ document.getElementById('form-galeria').addEventListener('submit', async (e) => 
         return;
     }
 
-    const cards = document.querySelectorAll('#galeria-items-container .admin-item-card');
-
-    const items = Array.from(cards).map((card, i) => ({
-        titulo: form.querySelector(`[name="gal_titulo_${i}"]`).value,
-        alt: form.querySelector(`[name="gal_alt_${i}"]`).value,
-        imagen: form.querySelector(`[name="gal_img_${i}"]`).value
-    }));
+    const items = collectGaleriaItems(form);
 
     contentData.galeria = {
         titulo: form.titulo.value,
@@ -426,6 +510,7 @@ document.getElementById('form-galeria').addEventListener('submit', async (e) => 
 
     try {
         await saveContent(contentData);
+        populateForms();
     } catch (error) {
         showAlert(error.message, 'danger');
     }
@@ -467,7 +552,7 @@ document.getElementById('btn-add-galeria').addEventListener('click', () => {
     const container = document.getElementById('galeria-items-container');
     const index = container.children.length;
     container.insertAdjacentHTML('beforeend', createGaleriaCard({ titulo: '', alt: '', imagen: '' }, index));
-    bindUploadInputs();
+    reindexGaleriaCards();
 });
 
 if (adminToken) {

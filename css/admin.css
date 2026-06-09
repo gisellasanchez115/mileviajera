@@ -118,6 +118,25 @@
     display: none;
 }
 
+.admin-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.admin-item-label {
+    font-weight: 600;
+    color: #1E3A5F;
+    font-size: 0.95rem;
+}
+
+.btn-delete-galeria {
+    font-size: 0.85rem;
+}
+
 .path-field[readonly] {
     background-color: #f1f3f5;
     color: #495057;

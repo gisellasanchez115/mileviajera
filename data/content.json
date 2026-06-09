@@ -1,0 +1,102 @@
+{
+  "inicio": {
+    "titulo_banner": "Descubriendo Colombia",
+    "subtitulo": "Explora destinos, cultura y aventuras únicas",
+    "video_banner": "assets/videos/banner.mp4.mp4",
+    "imagen_sobre": "img/inicio/imgsobremile.jpeg",
+    "texto_sobre_titulo": "Sobre Mile Viajera",
+    "texto_sobre": "Un blog dedicado a recorrer Colombia y compartir experiencias únicas, cultura, paisajes y aventuras inolvidables.",
+    "destinos_destacados": [
+      {
+        "nombre": "Huila",
+        "descripcion": "Desiertos, cultura, paisajes únicos y magia.",
+        "imagen": "img/inicio/imgfrase.jpeg"
+      },
+      {
+        "nombre": "Murillo",
+        "descripcion": "Naturaleza y montañas espectaculares.",
+        "imagen": "img/inicio/murillo.jpeg"
+      },
+      {
+        "nombre": "Valle del Cauca",
+        "descripcion": "Cultura, salsa, gastronomía y mucho más.",
+        "imagen": "img/inicio/valledelcauca.jpeg"
+      }
+    ],
+    "galeria_preview": [
+      { "imagen": "img/inicio/galeria1.jpg", "alt": "Galería 1" },
+      { "imagen": "img/inicio/galeria2.jpg", "alt": "Galería 2" },
+      { "imagen": "img/inicio/galeria3.jpeg", "alt": "Galería 3" }
+    ],
+    "frase": "Viajar es la única cosa que compras y te hace más rico",
+    "frase_autor": "Mile Viajera",
+    "imagen_frase": "img/inicio/imgfrase.jpeg"
+  },
+  "destinos": {
+    "titulo": "Destinos por Colombia",
+    "subtitulo": "Lugares mágicos, cultura y aventuras descubriendo la belleza colombiana.",
+    "banner": "img/destinos/bannerdestinos.jpg",
+    "items": [
+      {
+        "nombre": "Huila",
+        "ubicacion": "Huila, Colombia",
+        "descripcion": "Paisajes increíbles, desiertos, cultura y aventura.",
+        "imagen": "img/destinos/huila.jpeg"
+      },
+      {
+        "nombre": "Murillo",
+        "ubicacion": "Murillo, Tolima",
+        "descripcion": "Montañas, neblina y naturaleza espectacular.",
+        "imagen": "img/destinos/murillo.jpeg"
+      },
+      {
+        "nombre": "Valle del Cauca",
+        "ubicacion": "Valle del Cauca, Colombia",
+        "descripcion": "Cultura, gastronomía y paisajes inolvidables.",
+        "imagen": "img/destinos/valle.png"
+      }
+    ]
+  },
+  "galeria": {
+    "titulo": "Galería de Viajes",
+    "subtitulo": "Capturando momentos únicos por Colombia.",
+    "banner": "img/galeria/bannergaleria.jpg",
+    "items": [
+      { "titulo": "Galería 1", "imagen": "img/galeria/galeria1.jpeg", "alt": "Galería 1" },
+      { "titulo": "Galería 2", "imagen": "img/galeria/galeria2.jpeg", "alt": "Galería 2" },
+      { "titulo": "Galería 3", "imagen": "img/galeria/galeria3.jpeg", "alt": "Galería 3" },
+      { "titulo": "Galería 4", "imagen": "img/galeria/galeria4.jpeg", "alt": "Galería 4" },
+      { "titulo": "Galería 5", "imagen": "img/galeria/galeria5.jpeg", "alt": "Galería 5" },
+      { "titulo": "Galería 6", "imagen": "img/galeria/galeria6.jpeg", "alt": "Galería 6" }
+    ]
+  },
+  "blog": {
+    "titulo": "Blog de Aventuras",
+    "subtitulo": "Historias, experiencias y momentos recorriendo Colombia.",
+    "banner": "img/blog/bannerblog.jpg",
+    "items": [
+      {
+        "titulo": "Descubriendo el Desierto de la Tatacoa",
+        "contenido": "Una experiencia increíble entre paisajes únicos, cielos estrellados y naturaleza.",
+        "imagen": "img/blog/blog1.jpeg",
+        "enlace": "https://es.wikipedia.org/wiki/Desierto_de_la_Tatacoa"
+      },
+      {
+        "titulo": "Murillo y sus montañas mágicas",
+        "contenido": "Un destino lleno de frío, neblina y paisajes espectaculares para desconectarse.",
+        "imagen": "img/blog/blog2.jpeg",
+        "enlace": "https://es.wikipedia.org/wiki/Murillo_(Tolima)"
+      },
+      {
+        "titulo": "Rincones del Valle del Cauca",
+        "contenido": "Cultura, comida y paisajes que hacen del Valle un lugar inolvidable, magia desde el inicio.",
+        "imagen": "img/blog/blog3.jpeg",
+        "enlace": "https://es.wikipedia.org/wiki/Valle_del_Cauca"
+      }
+    ]
+  },
+  "redes_sociales": [
+    { "nombre": "Instagram", "url": "https://instagram.com/mile.viajera", "icono": "instagram" },
+    { "nombre": "Facebook", "url": "https://facebook.com/AscSan", "icono": "facebook" }
+  ]
+}

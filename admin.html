@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Mile Viajera</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="icon" type="image/png" href="assets/favicon/favicon.png.png">
+</head>
+<body class="admin-body">
+
+<div id="login-panel" class="admin-login">
+    <div class="admin-login-card">
+        <h1><i class="fa-solid fa-lock"></i> Panel Admin</h1>
+        <p>Personaliza imágenes y contenido de Mile Viajera</p>
+        <form id="login-form">
+            <div class="mb-3">
+                <label class="form-label">Contraseña</label>
+                <input type="password" id="login-password" class="form-control" placeholder="Contraseña de administrador" required>
+            </div>
+            <button type="submit" class="btn btn-admin w-100">Ingresar</button>
+        </form>
+        <p id="login-error" class="text-danger mt-3 d-none"></p>
+        <a href="index.html" class="admin-back-link">← Volver al sitio</a>
+    </div>
+</div>
+
+<div id="admin-panel" class="d-none">
+    <nav class="admin-navbar">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <span class="admin-brand"><i class="fa-solid fa-plane"></i> Mile Viajera Admin</span>
+            <div>
+                <a href="index.html" class="btn btn-sm btn-outline-light me-2">Ver sitio</a>
+                <button id="btn-logout" class="btn btn-sm btn-outline-light">Salir</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container admin-container">
+        <div id="alert-box" class="alert d-none" role="alert"></div>
+
+        <ul class="nav nav-tabs admin-tabs" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-inicio">Inicio</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-destinos">Destinos</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-galeria">Galería</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-blog">Blog</button></li>
+        </ul>
+
+        <div class="tab-content admin-tab-content">
+            <div class="tab-pane fade show active" id="tab-inicio">
+                <form id="form-inicio" class="admin-form">
+                    <h3>Banner principal</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Título</label>
+                            <input type="text" name="titulo_banner" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subtítulo</label>
+                            <input type="text" name="subtitulo" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Video banner (ruta)</label>
+                            <input type="text" name="video_banner" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subir video (.mp4)</label>
+                            <input type="file" class="form-control upload-input" data-section="videos" data-target="video_banner" accept="video/mp4,video/webm">
+                        </div>
+                    </div>
+
+                    <h3 class="mt-4">Sección Sobre</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Título</label>
+                            <input type="text" name="texto_sobre_titulo" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Texto</label>
+                            <textarea name="texto_sobre" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Imagen sobre (ruta)</label>
+                            <input type="text" name="imagen_sobre" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subir imagen</label>
+                            <input type="file" class="form-control upload-input" data-section="inicio" data-target="imagen_sobre" accept="image/*">
+                            <img class="admin-preview mt-2" data-preview="imagen_sobre" alt="Vista previa">
+                        </div>
+                    </div>
+
+                    <h3 class="mt-4">Frase inspiradora</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Frase</label>
+                            <input type="text" name="frase" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Autor</label>
+                            <input type="text" name="frase_autor" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Imagen de fondo (ruta)</label>
+                            <input type="text" name="imagen_frase" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subir imagen de fondo</label>
+                            <input type="file" class="form-control upload-input" data-section="inicio" data-target="imagen_frase" accept="image/*">
+                            <img class="admin-preview mt-2" data-preview="imagen_frase" alt="Vista previa">
+                        </div>
+                    </div>
+
+                    <h3 class="mt-4">Destinos destacados (inicio)</h3>
+                    <div id="inicio-destinos-container"></div>
+
+                    <h3 class="mt-4">Vista previa galería (inicio)</h3>
+                    <div id="inicio-galeria-container"></div>
+
+                    <button type="submit" class="btn btn-admin mt-4">Guardar inicio</button>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="tab-destinos">
+                <form id="form-destinos" class="admin-form">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Título</label>
+                            <input type="text" name="titulo" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subtítulo</label>
+                            <input type="text" name="subtitulo" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Banner (ruta)</label>
+                            <input type="text" name="banner" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subir banner</label>
+                            <input type="file" class="form-control upload-input" data-section="destinos" data-target="banner" accept="image/*">
+                            <img class="admin-preview mt-2" data-preview="banner" alt="Vista previa">
+                        </div>
+                    </div>
+                    <h3 class="mt-4">Destinos</h3>
+                    <div id="destinos-items-container"></div>
+                    <button type="submit" class="btn btn-admin mt-4">Guardar destinos</button>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="tab-galeria">
+                <form id="form-galeria" class="admin-form">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Título</label>
+                            <input type="text" name="titulo" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subtítulo</label>
+                            <input type="text" name="subtitulo" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Banner (ruta)</label>
+                            <input type="text" name="banner" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subir banner</label>
+                            <input type="file" class="form-control upload-input" data-section="galeria" data-target="banner" accept="image/*">
+                            <img class="admin-preview mt-2" data-preview="banner" alt="Vista previa">
+                        </div>
+                    </div>
+                    <h3 class="mt-4">Fotos</h3>
+                    <div id="galeria-items-container"></div>
+                    <button type="button" id="btn-add-galeria" class="btn btn-outline-secondary mt-2">+ Agregar foto</button>
+                    <button type="submit" class="btn btn-admin mt-4 d-block">Guardar galería</button>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="tab-blog">
+                <form id="form-blog" class="admin-form">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Título</label>
+                            <input type="text" name="titulo" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subtítulo</label>
+                            <input type="text" name="subtitulo" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Banner (ruta)</label>
+                            <input type="text" name="banner" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subir banner</label>
+                            <input type="file" class="form-control upload-input" data-section="blog" data-target="banner" accept="image/*">
+                            <img class="admin-preview mt-2" data-preview="banner" alt="Vista previa">
+                        </div>
+                    </div>
+                    <h3 class="mt-4">Entradas</h3>
+                    <div id="blog-items-container"></div>
+                    <button type="submit" class="btn btn-admin mt-4">Guardar blog</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

@@ -193,94 +193,69 @@ if(formulario){
 // TYPEWRITER SOLO EN INICIO
 // ========================================
 
-const tituloHero = document.querySelector('.hero-content h1');
-
-if(tituloHero){
+function iniciarTypewriterHero() {
+    const tituloHero = document.querySelector('.hero-content h1');
+    if (!tituloHero) return;
 
     const texto = tituloHero.textContent;
-
     tituloHero.textContent = '';
-
     let i = 0;
 
-    function escribirTexto(){
-
-        if(i < texto.length){
-
+    function escribirTexto() {
+        if (i < texto.length) {
             tituloHero.textContent += texto.charAt(i);
-
             i++;
-
             setTimeout(escribirTexto, 80);
         }
-
     }
 
     escribirTexto();
-
 }
 
-// ========================================
-// TYPEWRITER OTROS BANNERS
-// ========================================
-const titulosBanner = document.querySelectorAll(
-    '.contenido-destinos h1, .contenido-blog h1, .contenido-galeria h1, .contenido-contacto h1'
-);
+function iniciarTypewriterBanners() {
+    const titulosBanner = document.querySelectorAll(
+        '.contenido-destinos h1, .contenido-blog h1, .contenido-galeria h1, .contenido-contacto h1'
+    );
 
-titulosBanner.forEach((titulo) => {
+    titulosBanner.forEach((titulo) => {
+        const texto = titulo.textContent;
+        let i = 0;
+        let escribiendo = true;
 
-    const texto = titulo.textContent;
-
-    let i = 0;
-
-    let escribiendo = true;
-
-
-    function efecto(){
-
-        // ESCRIBIR
-
-        if(escribiendo){
-
-            titulo.textContent = texto.substring(0, i);
-
-            i++;
-
-            if(i > texto.length){
-
-                escribiendo = false;
-
-                setTimeout(efecto, 800);
-
-                return;
+        function efecto() {
+            if (escribiendo) {
+                titulo.textContent = texto.substring(0, i);
+                i++;
+                if (i > texto.length) {
+                    escribiendo = false;
+                    setTimeout(efecto, 800);
+                    return;
+                }
+            } else {
+                titulo.textContent = texto.substring(0, i);
+                i--;
+                if (i < 0) {
+                    escribiendo = true;
+                    i = 0;
+                }
             }
-
+            setTimeout(efecto, 75);
         }
 
-        // BORRAR
+        efecto();
+    });
+}
 
-        else{
+function iniciarEfectosTexto() {
+    iniciarTypewriterHero();
+    iniciarTypewriterBanners();
+}
 
-            titulo.textContent = texto.substring(0, i);
-
-            i--;
-
-            if(i < 0){
-
-                escribiendo = true;
-
-                i = 0;
-            }
-
-        }
-
-        setTimeout(efecto, escribiendo ? 75 : 75);
-
-    }
-
-    efecto();
-
-});
+if (document.body.dataset.page) {
+    document.addEventListener('mileviajera:content-ready', iniciarEfectosTexto);
+} else {
+    iniciarEfectosTexto();
+}
 
 
 // ========================================

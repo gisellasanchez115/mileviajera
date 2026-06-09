@@ -1,0 +1,123 @@
+.admin-body {
+    background-color: #f0f2f5;
+    min-height: 100vh;
+}
+
+.admin-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #1E3A5F 0%, #16324d 100%);
+}
+
+.admin-login-card {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.admin-login-card h1 {
+    font-size: 1.6rem;
+    color: #1E3A5F;
+    margin-bottom: 8px;
+}
+
+.admin-login-card p {
+    color: #666;
+    margin-bottom: 24px;
+}
+
+.admin-back-link {
+    display: inline-block;
+    margin-top: 20px;
+    color: #1E3A5F;
+    text-decoration: none;
+}
+
+.admin-back-link:hover {
+    color: #FF914D;
+}
+
+.admin-navbar {
+    background-color: #1E3A5F;
+    color: white;
+    padding: 14px 0;
+    margin-bottom: 30px;
+}
+
+.admin-brand {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.admin-container {
+    max-width: 960px;
+    padding-bottom: 60px;
+}
+
+.admin-tabs .nav-link {
+    color: #1E3A5F;
+    font-weight: 500;
+}
+
+.admin-tabs .nav-link.active {
+    color: #FF914D;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.admin-tab-content {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 30px;
+}
+
+.admin-form h3 {
+    color: #1E3A5F;
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #FF914D;
+}
+
+.btn-admin {
+    background-color: #FF914D;
+    color: white;
+    border: none;
+    padding: 10px 28px;
+    font-weight: 500;
+    border-radius: 8px;
+}
+
+.btn-admin:hover {
+    background-color: #e67d38;
+    color: white;
+}
+
+.admin-item-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.admin-preview {
+    max-width: 180px;
+    max-height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+    display: none;
+}
+
+.admin-preview.visible {
+    display: block;
+}

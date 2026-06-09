@@ -118,72 +118,64 @@ botonArriba.addEventListener('click', function(){
 // FORMULARIO CONTACTO
 // ========================================
 
-const formulario = document.querySelector('form');
+const formularioContacto = document.getElementById('form-contacto');
 
-if(formulario){
+if (formularioContacto) {
 
-    formulario.addEventListener('submit', function(event){
+    formularioContacto.addEventListener('submit', async function (event) {
 
         event.preventDefault();
 
+        const btnEnviar = document.getElementById('btn-enviar-contacto');
+        const nombreValor = formularioContacto.nombre.value.trim();
+        const emailValor = formularioContacto.correo.value.trim();
+        const asuntoValor = formularioContacto.asunto.value.trim();
+        const mensajeValor = formularioContacto.mensaje.value.trim();
 
-        // CAMPOS
-
-        const nombre = formulario.querySelector('input[type="text"]');
-
-        const email = formulario.querySelector('input[type="email"]');
-
-        const asunto = formulario.querySelectorAll('input[type="text"]')[1];
-
-        const mensaje = formulario.querySelector('textarea');
-
-
-        // VALORES
-
-        const nombreValor = nombre.value.trim();
-
-        const emailValor = email.value.trim();
-
-        const asuntoValor = asunto.value.trim();
-
-        const mensajeValor = mensaje.value.trim();
-
-
-        // VALIDACIÓN
-
-        if(
-            nombreValor === '' ||
-            emailValor === '' ||
-            asuntoValor === '' ||
-            mensajeValor === ''
-        ){
-
+        if (!nombreValor || !emailValor || !asuntoValor || !mensajeValor) {
             alert('Por favor completa todos los campos.');
-
             return;
         }
-
-
-        // VALIDACIÓN EMAIL
 
         const expresionEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        if(!expresionEmail.test(emailValor)){
-
+        if (!expresionEmail.test(emailValor)) {
             alert('Ingresa un correo válido.');
-
             return;
         }
 
+        if (btnEnviar) {
+            btnEnviar.disabled = true;
+            btnEnviar.textContent = 'Enviando...';
+        }
 
-        // MENSAJE ÉXITO
+        try {
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre: nombreValor,
+                    correo: emailValor,
+                    asunto: asuntoValor,
+                    mensaje: mensajeValor
+                })
+            });
 
-        alert('Mensaje enviado correctamente ✈️');
+            const data = await res.json();
 
+            if (!res.ok) {
+                throw new Error(data.error || 'No se pudo enviar el mensaje.');
+            }
 
-        // LIMPIAR FORMULARIO
-
-        formulario.reset();
+            alert('Mensaje enviado correctamente ✈️');
+            formularioContacto.reset();
+        } catch (error) {
+            alert(error.message || 'Error al enviar. Intenta más tarde.');
+        } finally {
+            if (btnEnviar) {
+                btnEnviar.disabled = false;
+                btnEnviar.textContent = 'Enviar mensaje';
+            }
+        }
 
     });
 

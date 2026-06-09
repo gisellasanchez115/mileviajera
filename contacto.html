@@ -189,19 +189,22 @@
 
                     <div class="formulario-contacto">
 
-                        <form>
+                        <form id="form-contacto">
 
                             <!-- NOMBRE -->
 
                             <div class="mb-4">
 
-                                <label class="form-label">
+                                <label class="form-label" for="contacto-nombre">
                                     Nombre completo
                                 </label>
 
                                 <input type="text"
+                                       id="contacto-nombre"
+                                       name="nombre"
                                        class="form-control"
-                                       placeholder="Ingresa tu nombre">
+                                       placeholder="Ingresa tu nombre"
+                                       required>
 
                             </div>
 
@@ -209,13 +212,16 @@
 
                             <div class="mb-4">
 
-                                <label class="form-label">
+                                <label class="form-label" for="contacto-correo">
                                     Correo electrónico
                                 </label>
 
                                 <input type="email"
+                                       id="contacto-correo"
+                                       name="correo"
                                        class="form-control"
-                                       placeholder="Ingresa tu correo">
+                                       placeholder="Ingresa tu correo"
+                                       required>
 
                             </div>
 
@@ -223,13 +229,16 @@
 
                             <div class="mb-4">
 
-                                <label class="form-label">
+                                <label class="form-label" for="contacto-asunto">
                                     Asunto
                                 </label>
 
                                 <input type="text"
+                                       id="contacto-asunto"
+                                       name="asunto"
                                        class="form-control"
-                                       placeholder="Asunto del mensaje">
+                                       placeholder="Asunto del mensaje"
+                                       required>
 
                             </div>
 
@@ -237,19 +246,23 @@
 
                             <div class="mb-4">
 
-                                <label class="form-label">
+                                <label class="form-label" for="contacto-mensaje">
                                     Mensaje
                                 </label>
 
-                                <textarea class="form-control"
+                                <textarea id="contacto-mensaje"
+                                          name="mensaje"
+                                          class="form-control"
                                           rows="6"
-                                          placeholder="Escribe tu mensaje"></textarea>
+                                          placeholder="Escribe tu mensaje"
+                                          required></textarea>
 
                             </div>
 
                             <!-- BOTÓN -->
 
                             <button type="submit"
+                                    id="btn-enviar-contacto"
                                     class="btn btn-contacto">
 
                                 Enviar mensaje

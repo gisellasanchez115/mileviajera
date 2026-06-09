@@ -2,6 +2,11 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const { Resend } = require('resend');
+
+const resend = new Resend('re_5MPmKyxH_4qwrijtauCQnS1WgYuk6gFxK');
+const CONTACT_FROM = 'onboarding@resend.dev';
+const CONTACT_TO = 'gisellasanchez115@gmail.com';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -163,6 +168,54 @@ app.delete('/api/image', (req, res) => {
   } catch (error) {
     console.error('Error al eliminar archivo:', error);
     res.status(500).json({ error: 'No se pudo eliminar el archivo.' });
+  }
+});
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+app.post('/api/contact', async (req, res) => {
+  const { nombre, correo, asunto, mensaje } = req.body || {};
+
+  if (!nombre?.trim() || !correo?.trim() || !asunto?.trim() || !mensaje?.trim()) {
+    return res.status(400).json({ error: 'Por favor completa todos los campos.' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(correo.trim())) {
+    return res.status(400).json({ error: 'Ingresa un correo válido.' });
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: CONTACT_FROM,
+      to: CONTACT_TO,
+      replyTo: correo.trim(),
+      subject: `[Mile Viajera] ${asunto.trim()}`,
+      html: `
+        <h2>Nuevo mensaje de contacto</h2>
+        <p><strong>Nombre:</strong> ${escapeHtml(nombre.trim())}</p>
+        <p><strong>Correo:</strong> ${escapeHtml(correo.trim())}</p>
+        <p><strong>Asunto:</strong> ${escapeHtml(asunto.trim())}</p>
+        <hr>
+        <p>${escapeHtml(mensaje.trim()).replace(/\n/g, '<br>')}</p>
+      `
+    });
+
+    if (error) {
+      console.error('Error Resend:', error);
+      return res.status(500).json({ error: 'No se pudo enviar el mensaje. Intenta más tarde.' });
+    }
+
+    res.json({ ok: true, message: 'Mensaje enviado correctamente.' });
+  } catch (err) {
+    console.error('Error al enviar contacto:', err);
+    res.status(500).json({ error: 'No se pudo enviar el mensaje. Intenta más tarde.' });
   }
 });
 

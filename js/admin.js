@@ -1,5 +1,99 @@
 let adminToken = sessionStorage.getItem('mv_admin_token');
 let contentData = {};
+const previewCache = new Map();
+
+function normalizeImageSrc(src) {
+    if (!src) return '';
+    if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
+        return src;
+    }
+    return src.startsWith('/') ? src : `/${src.replace(/^\/+/, '')}`;
+}
+
+function cachePreviewPath(path, dataUrl) {
+    if (!path || !dataUrl) return;
+    const key = path.replace(/\?.*$/, '');
+    previewCache.set(key, dataUrl);
+    try {
+        sessionStorage.setItem(`mv-preview:${key}`, dataUrl);
+    } catch {
+        // Ignorar si sessionStorage está lleno
+    }
+}
+
+function getCachedPreview(path) {
+    if (!path) return null;
+    const key = path.replace(/\?.*$/, '');
+    if (previewCache.has(key)) return previewCache.get(key);
+    try {
+        const cached = sessionStorage.getItem(`mv-preview:${key}`);
+        if (cached) previewCache.set(key, cached);
+        return cached;
+    } catch {
+        return null;
+    }
+}
+
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function applyPreviewImage(preview, src) {
+    if (!preview) return;
+    const box = preview.closest('.admin-preview-box');
+
+    if (!src) {
+        preview.removeAttribute('src');
+        preview.classList.remove('visible');
+        if (box) box.classList.remove('has-image');
+        return;
+    }
+
+    if (src.startsWith('data:')) {
+        preview.onerror = null;
+        preview.src = src;
+        preview.classList.add('visible');
+        if (box) box.classList.add('has-image');
+        return;
+    }
+
+    const normalized = normalizeImageSrc(src);
+    const cacheKey = normalized.replace(/\?.*$/, '');
+
+    preview.onerror = () => {
+        const cached = getCachedPreview(cacheKey) || getCachedPreview(src);
+        if (cached) {
+            preview.onerror = null;
+            preview.src = cached;
+            preview.classList.add('visible');
+            if (box) box.classList.add('has-image');
+            return;
+        }
+        preview.classList.remove('visible');
+        preview.removeAttribute('src');
+        if (box) box.classList.remove('has-image');
+    };
+
+    preview.src = `${normalized}${normalized.includes('?') ? '&' : '?'}t=${Date.now()}`;
+    preview.classList.add('visible');
+    if (box) {
+        box.classList.add('has-image');
+        if (!box.contains(preview)) box.prepend(preview);
+    }
+}
+
+function escapeHtml(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
 
 const loginPanel = document.getElementById('login-panel');
 const adminPanel = document.getElementById('admin-panel');
@@ -40,34 +134,12 @@ function itemHeader(label, containerId) {
 
 function setPreview(name, src) {
     document.querySelectorAll(`[data-preview="${name}"]`).forEach((img) => {
-        const box = img.closest('.admin-preview-box');
-        if (src) {
-            img.src = `${src}${src.includes('?') ? '&' : '?'}t=${Date.now()}`;
-            img.classList.add('visible');
-            if (box) box.classList.add('has-image');
-        } else {
-            img.removeAttribute('src');
-            img.classList.remove('visible');
-            if (box) box.classList.remove('has-image');
-        }
+        applyPreviewImage(img, src);
     });
 }
 
 function updateCardPreview(preview, src) {
-    if (!preview) return;
-    const box = preview.closest('.admin-preview-box');
-    if (src) {
-        preview.src = src.startsWith('data:') ? src : `${src}${src.includes('?') ? '&' : '?'}t=${Date.now()}`;
-        preview.classList.add('visible');
-        if (box) {
-            box.classList.add('has-image');
-            if (!box.contains(preview)) box.prepend(preview);
-        }
-    } else {
-        preview.removeAttribute('src');
-        preview.classList.remove('visible');
-        if (box) box.classList.remove('has-image');
-    }
+    applyPreviewImage(preview, src);
 }
 
 function ensurePreviewInBox(box) {
@@ -105,11 +177,9 @@ function showLocalPreview(input) {
     if (!file) return;
 
     if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            updateCardPreview(getPreviewForInput(input), e.target.result);
-        };
-        reader.readAsDataURL(file);
+        readFileAsDataURL(file).then((dataUrl) => {
+            updateCardPreview(getPreviewForInput(input), dataUrl);
+        });
     }
 }
 
@@ -126,12 +196,56 @@ function syncAllItemPreviews() {
 
 function previewBlock(src, alt = 'Vista previa') {
     const hasImage = Boolean(src);
+    const safeAlt = escapeHtml(alt);
+    const safeSrc = hasImage ? escapeHtml(normalizeImageSrc(src)) : '';
     return `
         <div class="admin-preview-box ${hasImage ? 'has-image' : ''}">
-            ${hasImage ? `<img src="${src}" class="admin-preview visible" alt="${alt}">` : ''}
+            ${hasImage ? `<img src="${safeSrc}" class="admin-preview visible" alt="${safeAlt}">` : ''}
             <span class="admin-preview-empty">Sin imagen</span>
         </div>
     `;
+}
+
+function syncPreviewsInPane(pane) {
+    if (!pane) return;
+
+    pane.querySelectorAll('.admin-item-card').forEach((card) => {
+        const pathInput = card.querySelector('[name*="_img_"]');
+        const box = card.querySelector('.admin-preview-box');
+        const preview = box ? ensurePreviewInBox(box) : card.querySelector('.admin-preview');
+        if (pathInput?.value.trim() && preview) {
+            applyPreviewImage(preview, pathInput.value.trim());
+        }
+    });
+
+    const previewFieldMap = {
+        'imagen_sobre': 'imagen_sobre',
+        'imagen_frase': 'imagen_frase',
+        'banner-destinos': 'banner',
+        'banner-galeria': 'banner',
+        'banner-blog': 'banner'
+    };
+
+    pane.querySelectorAll('[data-preview]').forEach((img) => {
+        const fieldName = previewFieldMap[img.dataset.preview];
+        if (!fieldName) return;
+        const input = pane.querySelector(`[name="${fieldName}"]`);
+        if (input?.value.trim()) {
+            applyPreviewImage(img, input.value.trim());
+        }
+    });
+}
+
+function bindTabPreviewRefresh() {
+    if (adminPanel.dataset.tabPreviewBound) return;
+    adminPanel.dataset.tabPreviewBound = 'true';
+
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach((tabEl) => {
+        tabEl.addEventListener('shown.bs.tab', (event) => {
+            const pane = document.querySelector(event.target.getAttribute('data-bs-target'));
+            syncPreviewsInPane(pane);
+        });
+    });
 }
 
 function createDestinoCard(item, index, prefix, containerId) {
@@ -455,6 +569,9 @@ function populateForms() {
     document.querySelectorAll('.path-field').forEach((el) => { el.readOnly = true; });
     syncAllItemPreviews();
     bindCrudActions();
+    bindTabPreviewRefresh();
+
+    document.querySelectorAll('.tab-pane.active').forEach((pane) => syncPreviewsInPane(pane));
 }
 
 function bindUploadInputs() {
@@ -520,10 +637,20 @@ async function handleUpload(input, targetFieldName, options = {}) {
     }
 
     const pathFieldName = getTargetNameForInput(input) || targetFieldName;
+    const file = input.files[0];
+    let localDataUrl = null;
+
+    if (file.type.startsWith('image/')) {
+        try {
+            localDataUrl = await readFileAsDataURL(file);
+        } catch {
+            localDataUrl = null;
+        }
+    }
 
     const formData = new FormData();
     formData.append('section', input.dataset.section || 'inicio');
-    formData.append('imagen', input.files[0]);
+    formData.append('imagen', file);
 
     try {
         const res = await fetch('/api/upload', {
@@ -540,6 +667,10 @@ async function handleUpload(input, targetFieldName, options = {}) {
         }
 
         if (!res.ok) throw new Error(data.error || `Error ${res.status} al subir.`);
+
+        if (localDataUrl) {
+            cachePreviewPath(data.path, localDataUrl);
+        }
 
         const target = findPathInputInContext(form || input.closest('form'), input, pathFieldName);
         if (target) {

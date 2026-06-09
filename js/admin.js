@@ -29,11 +29,98 @@ async function loadContent() {
 
 function setPreview(name, src) {
     document.querySelectorAll(`[data-preview="${name}"]`).forEach((img) => {
+        const box = img.closest('.admin-preview-box');
         if (src) {
-            img.src = src;
+            img.src = `${src}${src.includes('?') ? '&' : '?'}t=${Date.now()}`;
             img.classList.add('visible');
+            if (box) box.classList.add('has-image');
+        } else {
+            img.removeAttribute('src');
+            img.classList.remove('visible');
+            if (box) box.classList.remove('has-image');
         }
     });
+}
+
+function updateCardPreview(preview, src) {
+    if (!preview) return;
+    const box = preview.closest('.admin-preview-box');
+    if (src) {
+        preview.src = src.startsWith('data:') ? src : `${src}${src.includes('?') ? '&' : '?'}t=${Date.now()}`;
+        preview.classList.add('visible');
+        if (box) {
+            box.classList.add('has-image');
+            if (!box.contains(preview)) box.prepend(preview);
+        }
+    } else {
+        preview.removeAttribute('src');
+        preview.classList.remove('visible');
+        if (box) box.classList.remove('has-image');
+    }
+}
+
+function ensurePreviewInBox(box) {
+    if (!box) return null;
+    let img = box.querySelector('.admin-preview');
+    if (!img) {
+        img = document.createElement('img');
+        img.className = 'admin-preview';
+        img.alt = 'Vista previa';
+        box.prepend(img);
+    }
+    return img;
+}
+
+function getPreviewForInput(input) {
+    const col = input.closest('.col-md-6, .col-md-4');
+    if (col) {
+        const box = col.querySelector('.admin-preview-box');
+        if (box) return ensurePreviewInBox(box);
+        const preview = col.querySelector('.admin-preview');
+        if (preview) return preview;
+    }
+    if (input.dataset.target) {
+        const el = document.querySelector(`[data-preview="${input.dataset.target}"]`);
+        if (el) return el;
+    }
+    const card = input.closest('.admin-item-card');
+    const cardBox = card?.querySelector('.admin-preview-box');
+    if (cardBox) return ensurePreviewInBox(cardBox);
+    return card?.querySelector('.admin-preview') || null;
+}
+
+function showLocalPreview(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            updateCardPreview(getPreviewForInput(input), e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function syncAllItemPreviews() {
+    document.querySelectorAll('.admin-item-card').forEach((card) => {
+        const pathInput = card.querySelector('[name*="_img_"]');
+        const box = card.querySelector('.admin-preview-box');
+        const preview = box ? ensurePreviewInBox(box) : card.querySelector('.admin-preview');
+        if (pathInput && preview) {
+            updateCardPreview(preview, pathInput.value.trim());
+        }
+    });
+}
+
+function previewBlock(src, alt = 'Vista previa') {
+    const hasImage = Boolean(src);
+    return `
+        <div class="admin-preview-box ${hasImage ? 'has-image' : ''}">
+            ${hasImage ? `<img src="${src}" class="admin-preview visible" alt="${alt}">` : ''}
+            <span class="admin-preview-empty">Sin imagen</span>
+        </div>
+    `;
 }
 
 function createDestinoCard(item, index, prefix) {
@@ -55,7 +142,7 @@ function createDestinoCard(item, index, prefix) {
                 <div class="col-md-6">
                     <label class="form-label">Subir imagen</label>
                     <input type="file" class="form-control item-upload" data-prefix="${prefix}" data-index="${index}" data-section="${prefix === 'dest' ? 'destinos' : 'inicio'}" accept="image/*">
-                    ${item.imagen ? `<img src="${item.imagen}" class="admin-preview visible mt-2" alt="Vista previa">` : ''}
+                    ${previewBlock(item.imagen, item.nombre || 'Vista previa')}
                 </div>
             </div>
         </div>
@@ -87,7 +174,7 @@ function createGaleriaCard(item, index) {
                 <div class="col-md-6">
                     <label class="form-label">Subir imagen</label>
                     <input type="file" class="form-control item-upload" data-prefix="gal" data-index="${index}" data-section="galeria" accept="image/*">
-                    ${item.imagen ? `<img src="${item.imagen}" class="admin-preview visible mt-2" alt="Vista previa">` : ''}
+                    ${previewBlock(item.imagen, item.titulo || item.alt || 'Vista previa')}
                 </div>
             </div>
         </div>
@@ -200,7 +287,7 @@ function createBlogCard(item, index) {
                 <div class="col-md-6">
                     <label class="form-label">Subir imagen</label>
                     <input type="file" class="form-control item-upload" data-prefix="blog" data-index="${index}" data-section="blog" accept="image/*">
-                    ${item.imagen ? `<img src="${item.imagen}" class="admin-preview visible mt-2" alt="Vista previa">` : ''}
+                    ${previewBlock(item.imagen, item.titulo || 'Vista previa')}
                 </div>
             </div>
         </div>
@@ -257,19 +344,24 @@ function populateForms() {
 
     bindUploadInputs();
     document.querySelectorAll('.path-field').forEach((el) => { el.readOnly = true; });
+    syncAllItemPreviews();
     bindGaleriaActions();
 }
 
 function bindUploadInputs() {
     document.querySelectorAll('.upload-input').forEach((input) => {
-        input.onchange = () => handleUpload(input, getTargetNameForInput(input), { form: input.closest('form') });
+        input.onchange = async () => {
+            showLocalPreview(input);
+            await handleUpload(input, getTargetNameForInput(input), { form: input.closest('form') });
+        };
     });
 
     document.querySelectorAll('.item-upload').forEach((input) => {
-        input.onchange = () => {
+        input.onchange = async () => {
+            showLocalPreview(input);
             const targetName = getTargetNameForInput(input);
             if (targetName) {
-                handleUpload(input, targetName, { form: input.closest('form') });
+                await handleUpload(input, targetName, { form: input.closest('form') });
             }
         };
     });
@@ -330,11 +422,7 @@ async function handleUpload(input, targetFieldName, options = {}) {
         const target = findPathInput(form || input.closest('form'), pathFieldName);
         if (target) {
             target.value = data.path;
-            const preview = target.closest('.admin-item-card, .row, .col-md-6')?.querySelector('.admin-preview');
-            if (preview) {
-                preview.src = `${data.path}?t=${Date.now()}`;
-                preview.classList.add('visible');
-            }
+            updateCardPreview(getPreviewForInput(input), data.path);
             if (input.dataset.target) {
                 setPreview(input.dataset.target, data.path);
             }

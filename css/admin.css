@@ -109,13 +109,48 @@
     margin-bottom: 16px;
 }
 
+.admin-preview-box {
+    position: relative;
+    width: 100%;
+    max-width: 240px;
+    min-height: 150px;
+    background: #eef1f4;
+    border-radius: 10px;
+    border: 2px dashed #ced4da;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.admin-preview-box.has-image {
+    border-style: solid;
+    border-color: #dee2e6;
+    background: #fff;
+}
+
+.admin-preview-box.has-image .admin-preview-empty {
+    display: none;
+}
+
+.admin-preview-empty {
+    color: #adb5bd;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 16px;
+    pointer-events: none;
+}
+
 .admin-preview {
-    max-width: 180px;
-    max-height: 120px;
+    width: 100%;
+    max-height: 180px;
     object-fit: cover;
     border-radius: 8px;
-    border: 2px solid #dee2e6;
     display: none;
+}
+
+.admin-preview.visible {
+    display: block;
 }
 
 .admin-item-header {

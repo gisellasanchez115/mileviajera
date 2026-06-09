@@ -64,8 +64,8 @@
                             <input type="text" name="subtitulo" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Video banner (ruta)</label>
-                            <input type="text" name="video_banner" class="form-control">
+                            <label class="form-label">Video banner (automático)</label>
+                            <input type="text" name="video_banner" class="form-control path-field" readonly placeholder="Se completa al subir">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Subir video (.mp4)</label>
@@ -84,8 +84,8 @@
                             <textarea name="texto_sobre" class="form-control" rows="3"></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Imagen sobre (ruta)</label>
-                            <input type="text" name="imagen_sobre" class="form-control">
+                            <label class="form-label">Ruta imagen (automática)</label>
+                            <input type="text" name="imagen_sobre" class="form-control path-field" readonly placeholder="Se completa al subir">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Subir imagen</label>
@@ -105,8 +105,8 @@
                             <input type="text" name="frase_autor" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Imagen de fondo (ruta)</label>
-                            <input type="text" name="imagen_frase" class="form-control">
+                            <label class="form-label">Ruta fondo (automática)</label>
+                            <input type="text" name="imagen_frase" class="form-control path-field" readonly placeholder="Se completa al subir">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Subir imagen de fondo</label>
@@ -137,13 +137,13 @@
                             <input type="text" name="subtitulo" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Banner (ruta)</label>
-                            <input type="text" name="banner" class="form-control">
+                            <label class="form-label">Banner (automático)</label>
+                            <input type="text" name="banner" class="form-control path-field" readonly placeholder="Se completa al subir">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Subir banner</label>
-                            <input type="file" class="form-control upload-input" data-section="destinos" data-target="banner" accept="image/*">
-                            <img class="admin-preview mt-2" data-preview="banner" alt="Vista previa">
+                            <input type="file" class="form-control upload-input" data-section="destinos" data-target="banner-destinos" data-path-field="banner" accept="image/*">
+                            <img class="admin-preview mt-2" data-preview="banner-destinos" alt="Vista previa">
                         </div>
                     </div>
                     <h3 class="mt-4">Destinos</h3>
@@ -164,13 +164,13 @@
                             <input type="text" name="subtitulo" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Banner (ruta)</label>
-                            <input type="text" name="banner" class="form-control">
+                            <label class="form-label">Banner (automático)</label>
+                            <input type="text" name="banner" class="form-control path-field" readonly placeholder="Se completa al subir">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Subir banner</label>
-                            <input type="file" class="form-control upload-input" data-section="galeria" data-target="banner" accept="image/*">
-                            <img class="admin-preview mt-2" data-preview="banner" alt="Vista previa">
+                            <input type="file" class="form-control upload-input" data-section="galeria" data-target="banner-galeria" data-path-field="banner" accept="image/*">
+                            <img class="admin-preview mt-2" data-preview="banner-galeria" alt="Vista previa">
                         </div>
                     </div>
                     <h3 class="mt-4">Fotos</h3>
@@ -192,13 +192,13 @@
                             <input type="text" name="subtitulo" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Banner (ruta)</label>
-                            <input type="text" name="banner" class="form-control">
+                            <label class="form-label">Banner (automático)</label>
+                            <input type="text" name="banner" class="form-control path-field" readonly placeholder="Se completa al subir">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Subir banner</label>
-                            <input type="file" class="form-control upload-input" data-section="blog" data-target="banner" accept="image/*">
-                            <img class="admin-preview mt-2" data-preview="banner" alt="Vista previa">
+                            <input type="file" class="form-control upload-input" data-section="blog" data-target="banner-blog" data-path-field="banner" accept="image/*">
+                            <img class="admin-preview mt-2" data-preview="banner-blog" alt="Vista previa">
                         </div>
                     </div>
                     <h3 class="mt-4">Entradas</h3>

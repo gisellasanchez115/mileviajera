@@ -118,6 +118,8 @@
     display: none;
 }
 
-.admin-preview.visible {
-    display: block;
+.path-field[readonly] {
+    background-color: #f1f3f5;
+    color: #495057;
+    cursor: not-allowed;
 }

@@ -11,12 +11,25 @@ const CONTENT_PATH = path.join(__dirname, 'data', 'content.json');
 app.use(express.json({ limit: '2mb' }));
 
 const uploadDirs = {
-  inicio: 'img/inicio',
-  destinos: 'img/destinos',
-  galeria: 'img/galeria',
-  blog: 'img/blog',
-  videos: 'assets/videos',
-  logo: 'img/logo'
+  inicio: 'uploads/inicio',
+  destinos: 'uploads/destinos',
+  galeria: 'uploads/galeria',
+  blog: 'uploads/blog',
+  videos: 'uploads/videos',
+  logo: 'uploads/logo'
+};
+
+const mimeToExt = {
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+  'image/heic': '.heic',
+  'image/heif': '.heif',
+  'image/bmp': '.bmp',
+  'video/mp4': '.mp4',
+  'video/webm': '.webm'
 };
 
 Object.values(uploadDirs).forEach((dir) => {
@@ -40,30 +53,21 @@ function isAuthorized(req) {
   return token && token === ADMIN_PASSWORD;
 }
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    const section = req.body.section || 'inicio';
-    const dir = uploadDirs[section] || uploadDirs.inicio;
-    cb(null, path.join(__dirname, dir));
-  },
-  filename(req, file, cb) {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const safeName = file.originalname
-      .replace(/[^a-zA-Z0-9._-]/g, '-')
-      .toLowerCase();
-    cb(null, `${Date.now()}-${safeName || `upload${ext}`}`);
-  }
-});
+function isAllowedFile(file) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExt = /\.(jpe?g|png|gif|webp|heic|heif|jfif|bmp|mp4|webm)$/i;
+  const allowedMime = /^(image\/(jpeg|png|gif|webp|heic|heif|bmp|x-ms-bmp)|video\/(mp4|webm))/i;
+  return allowedExt.test(ext) || allowedMime.test(file.mimetype || '');
+}
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter(req, file, cb) {
-    const allowed = /\.(jpe?g|png|gif|webp|mp4|webm)$/i;
-    if (allowed.test(path.extname(file.originalname))) {
+    if (isAllowedFile(file)) {
       cb(null, true);
     } else {
-      cb(new Error('Formato no permitido. Usa JPG, PNG, WEBP, GIF o MP4.'));
+      cb(new Error('Formato no permitido. Usa JPG, PNG, WEBP, HEIC, GIF o MP4.'));
     }
   }
 });
@@ -100,18 +104,38 @@ app.post('/api/upload', (req, res) => {
     }
 
     if (!req.file) {
-      return res.status(400).json({ error: 'No se recibió ningún archivo.' });
+      return res.status(400).json({ error: 'No se recibió ningún archivo. Selecciona una imagen antes de guardar.' });
     }
 
-    const section = req.body.section || 'inicio';
-    const dir = uploadDirs[section] || uploadDirs.inicio;
-    const publicPath = `${dir}/${req.file.filename}`.replace(/\\/g, '/');
+    try {
+      const section = req.body.section || 'inicio';
+      const relativeDir = uploadDirs[section] || uploadDirs.inicio;
+      const absoluteDir = path.join(__dirname, relativeDir);
 
-    res.json({
-      ok: true,
-      path: publicPath,
-      message: 'Imagen subida correctamente.'
-    });
+      fs.mkdirSync(absoluteDir, { recursive: true });
+
+      let ext = path.extname(req.file.originalname).toLowerCase();
+      if (!ext && req.file.mimetype) {
+        ext = mimeToExt[req.file.mimetype] || '';
+      }
+      if (!ext) {
+        ext = req.file.mimetype?.startsWith('video/') ? '.mp4' : '.jpg';
+      }
+
+      const filename = `${Date.now()}-upload${ext}`;
+      fs.writeFileSync(path.join(absoluteDir, filename), req.file.buffer);
+
+      const publicPath = `${relativeDir}/${filename}`.replace(/\\/g, '/');
+
+      res.json({
+        ok: true,
+        path: publicPath,
+        message: 'Imagen subida correctamente.'
+      });
+    } catch (writeError) {
+      console.error('Error al guardar archivo:', writeError);
+      res.status(500).json({ error: 'No se pudo guardar el archivo en el servidor.' });
+    }
   });
 });
 

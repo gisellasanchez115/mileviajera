@@ -49,8 +49,8 @@ function createDestinoCard(item, index, prefix) {
                     <input type="text" class="form-control" name="${prefix}_desc_${index}" value="${item.descripcion || ''}">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Imagen (ruta)</label>
-                    <input type="text" class="form-control" name="${prefix}_img_${index}" value="${item.imagen || ''}">
+                    <label class="form-label">Ruta (automática)</label>
+                    <input type="text" class="form-control path-field" name="${prefix}_img_${index}" value="${item.imagen || ''}" readonly placeholder="Se completa al subir la imagen">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Subir imagen</label>
@@ -75,8 +75,8 @@ function createGaleriaCard(item, index) {
                     <input type="text" class="form-control" name="gal_alt_${index}" value="${item.alt || ''}">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Imagen (ruta)</label>
-                    <input type="text" class="form-control" name="gal_img_${index}" value="${item.imagen || ''}">
+                    <label class="form-label">Ruta (automática)</label>
+                    <input type="text" class="form-control path-field" name="gal_img_${index}" value="${item.imagen || ''}" readonly placeholder="Se completa al subir">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Subir imagen</label>
@@ -105,8 +105,8 @@ function createBlogCard(item, index) {
                     <textarea class="form-control" name="blog_contenido_${index}" rows="2">${item.contenido || ''}</textarea>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Imagen (ruta)</label>
-                    <input type="text" class="form-control" name="blog_img_${index}" value="${item.imagen || ''}">
+                    <label class="form-label">Ruta (automática)</label>
+                    <input type="text" class="form-control path-field" name="blog_img_${index}" value="${item.imagen || ''}" readonly placeholder="Se completa al subir">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Subir imagen</label>
@@ -141,7 +141,7 @@ function populateForms() {
     ['titulo', 'subtitulo', 'banner'].forEach((field) => {
         formDestinos.querySelector(`[name="${field}"]`).value = destinos[field] || '';
     });
-    setPreview('banner', destinos.banner);
+    setPreview('banner-destinos', destinos.banner);
 
     document.getElementById('destinos-items-container').innerHTML =
         destinos.items.map((d, i) => createDestinoCard(d, i, 'dest')).join('');
@@ -151,6 +151,7 @@ function populateForms() {
     ['titulo', 'subtitulo', 'banner'].forEach((field) => {
         formGaleria.querySelector(`[name="${field}"]`).value = galeria[field] || '';
     });
+    setPreview('banner-galeria', galeria.banner);
 
     document.getElementById('galeria-items-container').innerHTML =
         galeria.items.map((g, i) => createGaleriaCard(g, i)).join('');
@@ -160,40 +161,65 @@ function populateForms() {
     ['titulo', 'subtitulo', 'banner'].forEach((field) => {
         formBlog.querySelector(`[name="${field}"]`).value = blog[field] || '';
     });
+    setPreview('banner-blog', blog.banner);
 
     document.getElementById('blog-items-container').innerHTML =
         blog.items.map((b, i) => createBlogCard(b, i)).join('');
 
     bindUploadInputs();
+    document.querySelectorAll('.path-field').forEach((el) => { el.readOnly = true; });
 }
 
 function bindUploadInputs() {
     document.querySelectorAll('.upload-input').forEach((input) => {
-        input.onchange = () => handleUpload(input, input.dataset.target);
+        input.onchange = () => handleUpload(input, getTargetNameForInput(input), { form: input.closest('form') });
     });
 
     document.querySelectorAll('.item-upload').forEach((input) => {
         input.onchange = () => {
-            const prefix = input.dataset.prefix;
-            const index = input.dataset.index;
-            let targetName;
-
-            if (prefix === 'gal') targetName = `gal_img_${index}`;
-            else if (prefix === 'blog') targetName = `blog_img_${index}`;
-            else if (prefix === 'dest') targetName = `dest_img_${index}`;
-            else if (prefix === 'inicio_dest') targetName = `inicio_dest_img_${index}`;
-
-            handleUpload(input, targetName);
+            const targetName = getTargetNameForInput(input);
+            if (targetName) {
+                handleUpload(input, targetName, { form: input.closest('form') });
+            }
         };
     });
 }
 
-async function handleUpload(input, targetFieldName) {
-    if (!input.files.length) return;
+function getTargetNameForInput(input) {
+    if (input.dataset.pathField) return input.dataset.pathField;
+    if (input.dataset.target) return input.dataset.target;
+
+    const prefix = input.dataset.prefix;
+    const index = input.dataset.index;
+
+    if (prefix === 'gal') return `gal_img_${index}`;
+    if (prefix === 'blog') return `blog_img_${index}`;
+    if (prefix === 'dest') return `dest_img_${index}`;
+    if (prefix === 'inicio_dest') return `inicio_dest_img_${index}`;
+
+    return null;
+}
+
+function findPathInput(form, targetFieldName) {
+    if (form) {
+        const inForm = form.querySelector(`[name="${targetFieldName}"]`);
+        if (inForm) return inForm;
+    }
+    return document.querySelector(`[name="${targetFieldName}"]`);
+}
+
+async function handleUpload(input, targetFieldName, options = {}) {
+    const { silent = false, form = null } = options;
+
+    if (!input.files.length) {
+        return { ok: false, error: 'No hay archivo seleccionado.' };
+    }
+
+    const pathFieldName = input.dataset.pathField || targetFieldName;
 
     const formData = new FormData();
+    formData.append('section', input.dataset.section || 'inicio');
     formData.append('imagen', input.files[0]);
-    formData.append('section', input.dataset.section);
 
     try {
         const res = await fetch('/api/upload', {
@@ -202,23 +228,52 @@ async function handleUpload(input, targetFieldName) {
             body: formData
         });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-
-        const target = document.querySelector(`[name="${targetFieldName}"]`);
-        if (target) {
-            target.value = data.path;
-            const preview = target.closest('.admin-item-card, .row')?.querySelector('.admin-preview');
-            if (preview) {
-                preview.src = data.path;
-                preview.classList.add('visible');
-            }
-            setPreview(targetFieldName, data.path);
+        let data = {};
+        try {
+            data = await res.json();
+        } catch {
+            data = { error: 'Respuesta inválida del servidor.' };
         }
 
-        showAlert('Archivo subido correctamente.');
+        if (!res.ok) throw new Error(data.error || `Error ${res.status} al subir.`);
+
+        const target = findPathInput(form || input.closest('form'), pathFieldName);
+        if (target) {
+            target.value = data.path;
+            const preview = target.closest('.admin-item-card, .row, .col-md-6')?.querySelector('.admin-preview');
+            if (preview) {
+                preview.src = `${data.path}?t=${Date.now()}`;
+                preview.classList.add('visible');
+            }
+            if (input.dataset.target) {
+                setPreview(input.dataset.target, data.path);
+            }
+        }
+
+        if (!silent) showAlert('Archivo subido correctamente.');
+        return { ok: true, path: data.path };
     } catch (error) {
-        showAlert(error.message, 'danger');
+        if (!silent) showAlert(error.message, 'danger');
+        return { ok: false, error: error.message };
+    }
+}
+
+async function uploadPendingFiles(form) {
+    const fileInputs = form.querySelectorAll('input[type="file"]');
+
+    for (const input of fileInputs) {
+        if (!input.files.length) continue;
+
+        const targetName = getTargetNameForInput(input);
+        if (!targetName) continue;
+
+        const pathInput = findPathInput(form, targetName);
+        if (pathInput?.value.trim()) continue;
+
+        const result = await handleUpload(input, targetName, { silent: true, form });
+        if (!result.ok) {
+            throw new Error(result.error || 'No se pudo subir la imagen.');
+        }
     }
 }
 
@@ -271,6 +326,13 @@ document.getElementById('form-inicio').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
 
+    try {
+        await uploadPendingFiles(form);
+    } catch (error) {
+        showAlert(error.message, 'danger');
+        return;
+    }
+
     const destinos = contentData.inicio.destinos_destacados.map((_, i) => ({
         nombre: form.querySelector(`[name="inicio_dest_nombre_${i}"]`).value,
         descripcion: form.querySelector(`[name="inicio_dest_desc_${i}"]`).value,
@@ -308,6 +370,13 @@ document.getElementById('form-destinos').addEventListener('submit', async (e) =>
     e.preventDefault();
     const form = e.target;
 
+    try {
+        await uploadPendingFiles(form);
+    } catch (error) {
+        showAlert(error.message, 'danger');
+        return;
+    }
+
     const items = contentData.destinos.items.map((_, i) => ({
         nombre: form.querySelector(`[name="dest_nombre_${i}"]`).value,
         ubicacion: contentData.destinos.items[i].ubicacion || '',
@@ -332,6 +401,14 @@ document.getElementById('form-destinos').addEventListener('submit', async (e) =>
 document.getElementById('form-galeria').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
+
+    try {
+        await uploadPendingFiles(form);
+    } catch (error) {
+        showAlert(error.message, 'danger');
+        return;
+    }
+
     const cards = document.querySelectorAll('#galeria-items-container .admin-item-card');
 
     const items = Array.from(cards).map((card, i) => ({
@@ -357,6 +434,13 @@ document.getElementById('form-galeria').addEventListener('submit', async (e) => 
 document.getElementById('form-blog').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
+
+    try {
+        await uploadPendingFiles(form);
+    } catch (error) {
+        showAlert(error.message, 'danger');
+        return;
+    }
 
     const items = contentData.blog.items.map((_, i) => ({
         titulo: form.querySelector(`[name="blog_titulo_${i}"]`).value,

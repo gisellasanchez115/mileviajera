@@ -168,7 +168,9 @@
     font-size: 0.95rem;
 }
 
-.btn-delete-galeria {
+.btn-delete-galeria,
+.btn-delete-item,
+.btn-add-item {
     font-size: 0.85rem;
 }
 

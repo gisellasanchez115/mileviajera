@@ -27,6 +27,17 @@ async function loadContent() {
     populateForms();
 }
 
+function itemHeader(label, containerId) {
+    return `
+        <div class="admin-item-header">
+            <span class="admin-item-label">${label}</span>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-item" data-container="${containerId}" title="Eliminar">
+                <i class="fa-solid fa-trash"></i> Eliminar
+            </button>
+        </div>
+    `;
+}
+
 function setPreview(name, src) {
     document.querySelectorAll(`[data-preview="${name}"]`).forEach((img) => {
         const box = img.closest('.admin-preview-box');
@@ -123,15 +134,25 @@ function previewBlock(src, alt = 'Vista previa') {
     `;
 }
 
-function createDestinoCard(item, index, prefix) {
+function createDestinoCard(item, index, prefix, containerId) {
+    const label = prefix === 'dest' ? `Destino ${index + 1}` : `Destacado ${index + 1}`;
+    const ubicacionField = prefix === 'dest' ? `
+        <div class="col-md-4">
+            <label class="form-label">Ubicación</label>
+            <input type="text" class="form-control" name="${prefix}_ubicacion_${index}" value="${item.ubicacion || ''}">
+        </div>
+    ` : '';
+
     return `
         <div class="admin-item-card" data-index="${index}">
+            ${itemHeader(label, containerId)}
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Nombre</label>
                     <input type="text" class="form-control" name="${prefix}_nombre_${index}" value="${item.nombre || ''}">
                 </div>
-                <div class="col-md-8">
+                ${ubicacionField}
+                <div class="col-md-${prefix === 'dest' ? '4' : '8'}">
                     <label class="form-label">Descripción</label>
                     <input type="text" class="form-control" name="${prefix}_desc_${index}" value="${item.descripcion || ''}">
                 </div>
@@ -149,15 +170,33 @@ function createDestinoCard(item, index, prefix) {
     `;
 }
 
-function createGaleriaCard(item, index) {
+function createInicioGaleriaCard(item, index, containerId) {
     return `
         <div class="admin-item-card" data-index="${index}">
-            <div class="admin-item-header">
-                <span class="admin-item-label">Foto ${index + 1}</span>
-                <button type="button" class="btn btn-sm btn-outline-danger btn-delete-galeria" title="Eliminar foto">
-                    <i class="fa-solid fa-trash"></i> Eliminar
-                </button>
+            ${itemHeader(`Vista previa ${index + 1}`, containerId)}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Texto alternativo</label>
+                    <input type="text" class="form-control" name="inicio_gal_alt_${index}" value="${item.alt || ''}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Ruta (automática)</label>
+                    <input type="text" class="form-control path-field" name="inicio_gal_img_${index}" value="${item.imagen || ''}" readonly placeholder="Se completa al subir">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Subir imagen</label>
+                    <input type="file" class="form-control item-upload" data-prefix="inicio_gal" data-index="${index}" data-section="inicio" accept="image/*">
+                    ${previewBlock(item.imagen, item.alt || 'Vista previa')}
+                </div>
             </div>
+        </div>
+    `;
+}
+
+function createGaleriaCard(item, index, containerId) {
+    return `
+        <div class="admin-item-card" data-index="${index}">
+            ${itemHeader(`Foto ${index + 1}`, containerId)}
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Título</label>
@@ -181,92 +220,10 @@ function createGaleriaCard(item, index) {
     `;
 }
 
-function collectGaleriaItems(form) {
-    const cards = document.querySelectorAll('#galeria-items-container .admin-item-card');
-    return Array.from(cards).map((card) => ({
-        titulo: card.querySelector('[name^="gal_titulo_"]')?.value || '',
-        alt: card.querySelector('[name^="gal_alt_"]')?.value || '',
-        imagen: card.querySelector('[name^="gal_img_"]')?.value || ''
-    }));
-}
-
-function reindexGaleriaCards() {
-    const container = document.getElementById('galeria-items-container');
-    container.querySelectorAll('.admin-item-card').forEach((card, i) => {
-        card.dataset.index = i;
-        const label = card.querySelector('.admin-item-label');
-        if (label) label.textContent = `Foto ${i + 1}`;
-
-        const titulo = card.querySelector('[name^="gal_titulo_"]');
-        const alt = card.querySelector('[name^="gal_alt_"]');
-        const img = card.querySelector('[name^="gal_img_"]');
-        const fileInput = card.querySelector('.item-upload');
-
-        if (titulo) titulo.name = `gal_titulo_${i}`;
-        if (alt) alt.name = `gal_alt_${i}`;
-        if (img) img.name = `gal_img_${i}`;
-        if (fileInput) fileInput.dataset.index = i;
-    });
-    bindUploadInputs();
-}
-
-async function deleteImageFile(imagePath) {
-    if (!imagePath?.startsWith('uploads/')) return;
-
-    try {
-        await fetch('/api/image', {
-            method: 'DELETE',
-            headers: authHeaders(),
-            body: JSON.stringify({ path: imagePath })
-        });
-    } catch {
-        // No bloquear si el archivo ya no existe en disco
-    }
-}
-
-async function saveGaleriaFromForm(form, options = {}) {
-    contentData.galeria = {
-        titulo: form.titulo.value,
-        subtitulo: form.subtitulo.value,
-        banner: form.banner.value,
-        items: collectGaleriaItems(form)
-    };
-    await saveContent(contentData, { silent: true });
-    if (!options.skipReload) populateForms();
-}
-
-function bindGaleriaActions() {
-    const container = document.getElementById('galeria-items-container');
-    if (container.dataset.bound) return;
-    container.dataset.bound = 'true';
-
-    container.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.btn-delete-galeria');
-        if (!btn) return;
-
-        const card = btn.closest('.admin-item-card');
-        const form = document.getElementById('form-galeria');
-        if (!card || !form) return;
-
-        if (!confirm('¿Eliminar esta foto de la galería?')) return;
-
-        const imagenPath = card.querySelector('[name^="gal_img_"]')?.value || '';
-        card.remove();
-        reindexGaleriaCards();
-
-        try {
-            await deleteImageFile(imagenPath);
-            await saveGaleriaFromForm(form);
-            showAlert('Foto eliminada correctamente.');
-        } catch (error) {
-            showAlert(error.message, 'danger');
-        }
-    });
-}
-
-function createBlogCard(item, index) {
+function createBlogCard(item, index, containerId) {
     return `
         <div class="admin-item-card" data-index="${index}">
+            ${itemHeader(`Entrada ${index + 1}`, containerId)}
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Título</label>
@@ -294,6 +251,158 @@ function createBlogCard(item, index) {
     `;
 }
 
+function reindexContainer(containerId, config) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.querySelectorAll('.admin-item-card').forEach((card, i) => {
+        card.dataset.index = i;
+        const label = card.querySelector('.admin-item-label');
+        if (label) label.textContent = config.label(i);
+
+        config.fields.forEach((field) => {
+            const input = card.querySelector(`[name^="${field.prefix}_"]`);
+            if (input) input.name = `${field.prefix}_${field.suffix}_${i}`;
+        });
+
+        const fileInput = card.querySelector('.item-upload');
+        if (fileInput) fileInput.dataset.index = i;
+    });
+
+    bindUploadInputs();
+    document.querySelectorAll('.path-field').forEach((el) => { el.readOnly = true; });
+}
+
+const CRUD_INDEX = {
+    'inicio-destinos-container': {
+        label: (i) => `Destacado ${i + 1}`,
+        fields: [
+            { prefix: 'inicio_dest', suffix: 'nombre' },
+            { prefix: 'inicio_dest', suffix: 'desc' },
+            { prefix: 'inicio_dest', suffix: 'img' }
+        ]
+    },
+    'inicio-galeria-container': {
+        label: (i) => `Vista previa ${i + 1}`,
+        fields: [
+            { prefix: 'inicio_gal', suffix: 'alt' },
+            { prefix: 'inicio_gal', suffix: 'img' }
+        ]
+    },
+    'destinos-items-container': {
+        label: (i) => `Destino ${i + 1}`,
+        fields: [
+            { prefix: 'dest', suffix: 'nombre' },
+            { prefix: 'dest', suffix: 'ubicacion' },
+            { prefix: 'dest', suffix: 'desc' },
+            { prefix: 'dest', suffix: 'img' }
+        ]
+    },
+    'galeria-items-container': {
+        label: (i) => `Foto ${i + 1}`,
+        fields: [
+            { prefix: 'gal', suffix: 'titulo' },
+            { prefix: 'gal', suffix: 'alt' },
+            { prefix: 'gal', suffix: 'img' }
+        ]
+    },
+    'blog-items-container': {
+        label: (i) => `Entrada ${i + 1}`,
+        fields: [
+            { prefix: 'blog', suffix: 'titulo' },
+            { prefix: 'blog', suffix: 'enlace' },
+            { prefix: 'blog', suffix: 'contenido' },
+            { prefix: 'blog', suffix: 'img' }
+        ]
+    }
+};
+
+function collectDestinoItems(containerId, prefix, withUbicacion) {
+    const container = document.getElementById(containerId);
+    return Array.from(container.querySelectorAll('.admin-item-card')).map((card) => {
+        const item = {
+            nombre: card.querySelector(`[name^="${prefix}_nombre_"]`)?.value.trim() || '',
+            descripcion: card.querySelector(`[name^="${prefix}_desc_"]`)?.value.trim() || '',
+            imagen: card.querySelector(`[name^="${prefix}_img_"]`)?.value.trim() || ''
+        };
+        if (withUbicacion) {
+            item.ubicacion = card.querySelector(`[name^="${prefix}_ubicacion_"]`)?.value.trim() || '';
+        }
+        return item;
+    });
+}
+
+function collectGaleriaItems(containerId) {
+    const container = document.getElementById(containerId);
+    return Array.from(container.querySelectorAll('.admin-item-card')).map((card) => ({
+        titulo: card.querySelector('[name^="gal_titulo_"]')?.value.trim() || '',
+        alt: card.querySelector('[name^="gal_alt_"]')?.value.trim() || '',
+        imagen: card.querySelector('[name^="gal_img_"]')?.value.trim() || ''
+    }));
+}
+
+function collectInicioGaleriaItems() {
+    const container = document.getElementById('inicio-galeria-container');
+    return Array.from(container.querySelectorAll('.admin-item-card')).map((card) => ({
+        imagen: card.querySelector('[name^="inicio_gal_img_"]')?.value.trim() || '',
+        alt: card.querySelector('[name^="inicio_gal_alt_"]')?.value.trim() || ''
+    }));
+}
+
+function collectBlogItems() {
+    const container = document.getElementById('blog-items-container');
+    return Array.from(container.querySelectorAll('.admin-item-card')).map((card) => ({
+        titulo: card.querySelector('[name^="blog_titulo_"]')?.value.trim() || '',
+        contenido: card.querySelector('[name^="blog_contenido_"]')?.value.trim() || '',
+        imagen: card.querySelector('[name^="blog_img_"]')?.value.trim() || '',
+        enlace: card.querySelector('[name^="blog_enlace_"]')?.value.trim() || ''
+    }));
+}
+
+function bindCrudActions() {
+    if (adminPanel.dataset.crudBound) return;
+    adminPanel.dataset.crudBound = 'true';
+
+    adminPanel.addEventListener('click', (e) => {
+        const btnAdd = e.target.closest('.btn-add-item');
+        if (btnAdd) {
+            const containerId = btnAdd.dataset.container;
+            const container = document.getElementById(containerId);
+            const index = container.children.length;
+
+            if (containerId === 'inicio-destinos-container') {
+                container.insertAdjacentHTML('beforeend', createDestinoCard({ nombre: '', descripcion: '', imagen: '' }, index, 'inicio_dest', containerId));
+            } else if (containerId === 'inicio-galeria-container') {
+                container.insertAdjacentHTML('beforeend', createInicioGaleriaCard({ alt: '', imagen: '' }, index, containerId));
+            } else if (containerId === 'destinos-items-container') {
+                container.insertAdjacentHTML('beforeend', createDestinoCard({ nombre: '', ubicacion: '', descripcion: '', imagen: '' }, index, 'dest', containerId));
+            } else if (containerId === 'galeria-items-container') {
+                container.insertAdjacentHTML('beforeend', createGaleriaCard({ titulo: '', alt: '', imagen: '' }, index, containerId));
+            } else if (containerId === 'blog-items-container') {
+                container.insertAdjacentHTML('beforeend', createBlogCard({ titulo: '', contenido: '', imagen: '', enlace: '' }, index, containerId));
+            }
+
+            reindexContainer(containerId, CRUD_INDEX[containerId]);
+            syncAllItemPreviews();
+            return;
+        }
+
+        const btnDelete = e.target.closest('.btn-delete-item');
+        if (!btnDelete) return;
+
+        const containerId = btnDelete.dataset.container;
+        const card = btnDelete.closest('.admin-item-card');
+        if (!card || !containerId) return;
+
+        if (!confirm('¿Eliminar este elemento?')) return;
+
+        card.remove();
+        reindexContainer(containerId, CRUD_INDEX[containerId]);
+        syncAllItemPreviews();
+        showAlert('Elemento eliminado. Pulsa Guardar para aplicar los cambios.', 'warning');
+    });
+}
+
 function populateForms() {
     const inicio = contentData.inicio;
     const formInicio = document.getElementById('form-inicio');
@@ -307,10 +416,10 @@ function populateForms() {
     setPreview('imagen_frase', inicio.imagen_frase);
 
     document.getElementById('inicio-destinos-container').innerHTML =
-        inicio.destinos_destacados.map((d, i) => createDestinoCard(d, i, 'inicio_dest')).join('');
+        (inicio.destinos_destacados || []).map((d, i) => createDestinoCard(d, i, 'inicio_dest', 'inicio-destinos-container')).join('');
 
     document.getElementById('inicio-galeria-container').innerHTML =
-        inicio.galeria_preview.map((g, i) => createGaleriaCard({ ...g, titulo: g.alt }, i)).join('');
+        (inicio.galeria_preview || []).map((g, i) => createInicioGaleriaCard(g, i, 'inicio-galeria-container')).join('');
 
     const destinos = contentData.destinos;
     const formDestinos = document.getElementById('form-destinos');
@@ -320,7 +429,7 @@ function populateForms() {
     setPreview('banner-destinos', destinos.banner);
 
     document.getElementById('destinos-items-container').innerHTML =
-        destinos.items.map((d, i) => createDestinoCard(d, i, 'dest')).join('');
+        (destinos.items || []).map((d, i) => createDestinoCard(d, i, 'dest', 'destinos-items-container')).join('');
 
     const galeria = contentData.galeria;
     const formGaleria = document.getElementById('form-galeria');
@@ -330,7 +439,7 @@ function populateForms() {
     setPreview('banner-galeria', galeria.banner);
 
     document.getElementById('galeria-items-container').innerHTML =
-        galeria.items.map((g, i) => createGaleriaCard(g, i)).join('');
+        (galeria.items || []).map((g, i) => createGaleriaCard(g, i, 'galeria-items-container')).join('');
 
     const blog = contentData.blog;
     const formBlog = document.getElementById('form-blog');
@@ -340,12 +449,12 @@ function populateForms() {
     setPreview('banner-blog', blog.banner);
 
     document.getElementById('blog-items-container').innerHTML =
-        blog.items.map((b, i) => createBlogCard(b, i)).join('');
+        (blog.items || []).map((b, i) => createBlogCard(b, i, 'blog-items-container')).join('');
 
     bindUploadInputs();
     document.querySelectorAll('.path-field').forEach((el) => { el.readOnly = true; });
     syncAllItemPreviews();
-    bindGaleriaActions();
+    bindCrudActions();
 }
 
 function bindUploadInputs() {
@@ -369,17 +478,17 @@ function bindUploadInputs() {
 
 function getTargetNameForInput(input) {
     if (input.dataset.pathField) return input.dataset.pathField;
-    if (input.dataset.target) return input.dataset.target;
 
     const prefix = input.dataset.prefix;
     const index = input.dataset.index;
 
     if (prefix === 'gal') return `gal_img_${index}`;
+    if (prefix === 'inicio_gal') return `inicio_gal_img_${index}`;
     if (prefix === 'blog') return `blog_img_${index}`;
     if (prefix === 'dest') return `dest_img_${index}`;
     if (prefix === 'inicio_dest') return `inicio_dest_img_${index}`;
 
-    return null;
+    return input.dataset.target || null;
 }
 
 function findPathInput(form, targetFieldName) {
@@ -390,6 +499,19 @@ function findPathInput(form, targetFieldName) {
     return document.querySelector(`[name="${targetFieldName}"]`);
 }
 
+function findPathInputInContext(form, input, pathFieldName) {
+    const card = input.closest('.admin-item-card');
+    if (card) {
+        const inCard = card.querySelector('[name*="_img_"]');
+        if (inCard) return inCard;
+    }
+    if (form) {
+        const inForm = form.querySelector(`[name="${pathFieldName}"]`);
+        if (inForm) return inForm;
+    }
+    return document.querySelector(`[name="${pathFieldName}"]`);
+}
+
 async function handleUpload(input, targetFieldName, options = {}) {
     const { silent = false, form = null } = options;
 
@@ -397,7 +519,7 @@ async function handleUpload(input, targetFieldName, options = {}) {
         return { ok: false, error: 'No hay archivo seleccionado.' };
     }
 
-    const pathFieldName = input.dataset.pathField || targetFieldName;
+    const pathFieldName = getTargetNameForInput(input) || targetFieldName;
 
     const formData = new FormData();
     formData.append('section', input.dataset.section || 'inicio');
@@ -419,7 +541,7 @@ async function handleUpload(input, targetFieldName, options = {}) {
 
         if (!res.ok) throw new Error(data.error || `Error ${res.status} al subir.`);
 
-        const target = findPathInput(form || input.closest('form'), pathFieldName);
+        const target = findPathInputInContext(form || input.closest('form'), input, pathFieldName);
         if (target) {
             target.value = data.path;
             updateCardPreview(getPreviewForInput(input), data.path);
@@ -445,7 +567,11 @@ async function uploadPendingFiles(form) {
         const targetName = getTargetNameForInput(input);
         if (!targetName) continue;
 
-        const pathInput = findPathInput(form, targetName);
+        const card = input.closest('.admin-item-card');
+        const pathInput = card
+            ? card.querySelector('[name*="_img_"]')
+            : findPathInputInContext(form, input, targetName);
+
         if (pathInput?.value.trim()) continue;
 
         const result = await handleUpload(input, targetName, { silent: true, form });
@@ -511,17 +637,6 @@ document.getElementById('form-inicio').addEventListener('submit', async (e) => {
         return;
     }
 
-    const destinos = contentData.inicio.destinos_destacados.map((_, i) => ({
-        nombre: form.querySelector(`[name="inicio_dest_nombre_${i}"]`).value,
-        descripcion: form.querySelector(`[name="inicio_dest_desc_${i}"]`).value,
-        imagen: form.querySelector(`[name="inicio_dest_img_${i}"]`).value
-    }));
-
-    const galeria = contentData.inicio.galeria_preview.map((_, i) => ({
-        imagen: form.querySelector(`[name="gal_img_${i}"]`).value,
-        alt: form.querySelector(`[name="gal_titulo_${i}"]`).value
-    }));
-
     contentData.inicio = {
         ...contentData.inicio,
         titulo_banner: form.titulo_banner.value,
@@ -533,12 +648,13 @@ document.getElementById('form-inicio').addEventListener('submit', async (e) => {
         frase: form.frase.value,
         frase_autor: form.frase_autor.value,
         imagen_frase: form.imagen_frase.value,
-        destinos_destacados: destinos,
-        galeria_preview: galeria
+        destinos_destacados: collectDestinoItems('inicio-destinos-container', 'inicio_dest', false),
+        galeria_preview: collectInicioGaleriaItems()
     };
 
     try {
         await saveContent(contentData);
+        populateForms();
     } catch (error) {
         showAlert(error.message, 'danger');
     }
@@ -555,22 +671,16 @@ document.getElementById('form-destinos').addEventListener('submit', async (e) =>
         return;
     }
 
-    const items = contentData.destinos.items.map((_, i) => ({
-        nombre: form.querySelector(`[name="dest_nombre_${i}"]`).value,
-        ubicacion: contentData.destinos.items[i].ubicacion || '',
-        descripcion: form.querySelector(`[name="dest_desc_${i}"]`).value,
-        imagen: form.querySelector(`[name="dest_img_${i}"]`).value
-    }));
-
     contentData.destinos = {
         titulo: form.titulo.value,
         subtitulo: form.subtitulo.value,
         banner: form.banner.value,
-        items
+        items: collectDestinoItems('destinos-items-container', 'dest', true)
     };
 
     try {
         await saveContent(contentData);
+        populateForms();
     } catch (error) {
         showAlert(error.message, 'danger');
     }
@@ -587,13 +697,11 @@ document.getElementById('form-galeria').addEventListener('submit', async (e) => 
         return;
     }
 
-    const items = collectGaleriaItems(form);
-
     contentData.galeria = {
         titulo: form.titulo.value,
         subtitulo: form.subtitulo.value,
         banner: form.banner.value,
-        items
+        items: collectGaleriaItems('galeria-items-container')
     };
 
     try {
@@ -615,32 +723,19 @@ document.getElementById('form-blog').addEventListener('submit', async (e) => {
         return;
     }
 
-    const items = contentData.blog.items.map((_, i) => ({
-        titulo: form.querySelector(`[name="blog_titulo_${i}"]`).value,
-        contenido: form.querySelector(`[name="blog_contenido_${i}"]`).value,
-        imagen: form.querySelector(`[name="blog_img_${i}"]`).value,
-        enlace: form.querySelector(`[name="blog_enlace_${i}"]`).value
-    }));
-
     contentData.blog = {
         titulo: form.titulo.value,
         subtitulo: form.subtitulo.value,
         banner: form.banner.value,
-        items
+        items: collectBlogItems()
     };
 
     try {
         await saveContent(contentData);
+        populateForms();
     } catch (error) {
         showAlert(error.message, 'danger');
     }
-});
-
-document.getElementById('btn-add-galeria').addEventListener('click', () => {
-    const container = document.getElementById('galeria-items-container');
-    const index = container.children.length;
-    container.insertAdjacentHTML('beforeend', createGaleriaCard({ titulo: '', alt: '', imagen: '' }, index));
-    reindexGaleriaCards();
 });
 
 if (adminToken) {
